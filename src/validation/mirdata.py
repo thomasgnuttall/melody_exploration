@@ -36,7 +36,7 @@ def validate_mirdata_index(d, verbose=False):
 			m = (f"The following files in the index are"\
 				  " not available locally: \n{tracks}")
 		else:
-			m = (f"Their are files in the index"\
+			m = (f"There are files in the index"\
 				  " that are not available locally")
 		raise DatasetException(m)
 
@@ -57,6 +57,6 @@ def validate_mirdata_checksum(d, verbose=False):
 			m = (f"The following files in the index do"\
 				  " not have a valid checksum: \n{tracks}")
 		else:
-			m = (f"Their are files in the index"\
+			m = (f"There are files in the index"\
 				  " that do not have a valid checksum")
 		raise DatasetException(m)
