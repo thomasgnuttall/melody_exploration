@@ -4,18 +4,18 @@
 
 Automated pitch contour extraction and pattern exploration
 
-#### Installation
+### Installation
 
 placeholder
 
-#### Configuration
+### Configuration
 
 placeholder
 
-#### Usage
+### Usage
 
 placeholder
 
-#### References
+### References
 
 placeholder
