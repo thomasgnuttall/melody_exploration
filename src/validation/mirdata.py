@@ -12,7 +12,7 @@ def validate_mirdata(dataset, verbose=False):
 	:type dataset: mirdata.core.Dataset
 
 	:param verbose: Print out tracks that fail validation? Defaults to False
-	:type dataset: bool
+	:type verbose: bool
 	"""
 	d1, d2 = dataset.validate()
 
@@ -25,10 +25,10 @@ def validate_mirdata_index(d, verbose=False):
 	Validate that all files in the index but are available locally
 	
 	:param d: First returned dict from mirdata.core.Dataset validate() method
-	:type dataset: dict
+	:type d: dict
 
 	:param verbose: Print out tracks that fail validation? Defaults to False
-	:type dataset: bool
+	:type verbose: bool
 	"""
 	tracks = d['tracks']
 	if tracks:
@@ -49,7 +49,7 @@ def validate_mirdata_checksum(d, verbose=False):
 	:type dataset: dict
 
 	:param verbose: Print out tracks that fail validation? Defaults to False	
-	:type dataset: bool
+	:type verbose: bool
 	"""
 	tracks = d['tracks']
 	if tracks:
