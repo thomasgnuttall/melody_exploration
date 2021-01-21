@@ -28,4 +28,8 @@ def pitch_contour_writer(pitch, time, path):
     :param path: path to write pitch contour to
     :type path: str
     """
-    pass
+    ##text=List of strings to be written to file
+    with open(path,'w') as file:
+        for t, p in zip(time, pitch):
+            file.write(f"{t}\t{p}")
+            file.write('\n')

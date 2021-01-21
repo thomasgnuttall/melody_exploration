@@ -10,9 +10,9 @@ def run_pitch_extraction(conf):
     # Load
     # TODO: replace with logger
     path = conf['audio_path']
-    print(f'Loading audio at {path}')
+    print(f'Loading audio from: {path}')
     audio = audio_loader(path, sampleRate=conf['sampleRate'])
-    sample = audio[5*sampleRate:10*sampleRate]
+    sample = audio[int(5*conf['sampleRate']):int(10*conf['sampleRate'])]
 
     for pp_func, pp_kwargs in conf['preprocessing_steps']:
         print(f'Pre-processing step: {pp_func.__name__}')
@@ -22,11 +22,9 @@ def run_pitch_extraction(conf):
     extractor_kwargs = conf['extractor_kwargs']
     
     print(f'Extracting pitch with extractor: {extractor.__name__}')
-    time, pitch = extractor(audio, **extractor_kwargs)
+    time, pitch = extractor(sample, **extractor_kwargs)
 
     out_path = conf['pitch_output_dir']
     if out_path:
-        print('Writing pitch contour to {out_path}')
-        src.io.pitch_contour_writer(pitch, time, out_path)
-
-    return time, pitch
+        print(f'Writing pitch contour to {out_path}')
+        pitch_contour_writer(pitch, time, out_path)
