@@ -12,7 +12,7 @@ def run_pitch_extraction(conf):
     path = conf['audio_path']
     print(f'Loading audio from: {path}')
     audio = audio_loader(path, sampleRate=conf['sampleRate'])
-    sample = audio[int(5*conf['sampleRate']):int(10*conf['sampleRate'])]
+    sample = audio
 
     for pp_func, pp_kwargs in conf['preprocessing_steps']:
         print(f'Pre-processing step: {pp_func.__name__}')

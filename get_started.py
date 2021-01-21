@@ -44,30 +44,39 @@ out_path = '/Desktop/'
 ###############################
 ## Pitch Extraction Pipeline ##
 ###############################
-conf = {
-    # Load
-    'audio_path': in_path,
-    'sampleRate': 44100.0,
+for t in track_names:
+    track = carnatic_data[t]
+    if hasattr(track, 'audio_vocal_path'):
+        audio_path = track.audio_vocal_path
+        ap = 'vocal_track'
+    elif hasattr(track, 'audio_path'):
+        audio_path = track.audio_path
+        ap='mixed_audio'
+    else:
+        continue
+    conf = {
+        # Load
+        'audio_path': audio_path,
+        'sampleRate': 44100.0,
 
-    # Pre-processing
-    'preprocessing_steps': [
-            (melody_enhancer, {}), 
-            (source_separator, {})
-        ],
-    
-    # Predominant Pitch Extraction
-    'extractor': melodia,
-    'extractor_kwargs': {
-                'frameSize': 2048, 
-                'hopSize': 128, 
-                'sampleRate': 44100.0
-            },
+        # Pre-processing
+        'preprocessing_steps': [
+                (melody_enhancer, {}), 
+                (source_separator, {})
+            ],
+        
+        # Predominant Pitch Extraction
+        'extractor': melodia,
+        'extractor_kwargs': {
+                    'frameSize': 2048, 
+                    'hopSize': 128, 
+                    'sampleRate': 44100.0
+                },
 
-    # Output
-    'pitch_output_dir': '/Users/thomasnuttall/Desktop/test.txt' # Doesn't write if None
-}
-
-time, pitch = run_pitch_extraction(conf)
+        # Output
+        'pitch_output_dir': f'/Users/thomasnuttall/Desktop/{t}___{ap}.txt' # Doesn't write if None
+    }
+    run_pitch_extraction(conf)
 
 
 
