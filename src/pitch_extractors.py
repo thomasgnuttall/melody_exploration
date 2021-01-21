@@ -4,9 +4,9 @@
 # Pitch extractors should take as an input a numpy array representation of audio (+ kwargs)
 #   ...and return two iterables; time and pitch, of equal length indicating the extracted pitch and given time
 #
+import numpy as np
 
 from essentia.standard import PredominantPitchMelodia
-import numpy as np
 
 def melodia(audio, frameSize, hopSize, sampleRate=44100.0):
     """
