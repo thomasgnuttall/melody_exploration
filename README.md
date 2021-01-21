@@ -6,8 +6,8 @@ Automated pitch contour extraction and pattern exploration
 
 ### Installation
 
-placeholder
 requires essentia library
+
 requires python <= 3.8
 
 ### Configuration
