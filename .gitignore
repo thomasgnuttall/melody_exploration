@@ -140,3 +140,7 @@ cython_debug/
 # pycache
 */__pycache__/
 *.pyc
+
+# Folders and files
+data/*
+notes.txt

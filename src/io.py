@@ -1,4 +1,5 @@
 import essentia
+import essentia.standard
 
 def audio_loader(path, sampleRate=44100):
     """
@@ -17,7 +18,7 @@ def audio_loader(path, sampleRate=44100):
     return audio
 
 
-def pitch_contour_writer(pitch, time, path):
+def write_pitch_contour(pitch, time, path):
     """
     Load audio file from <path> to numpy array
 

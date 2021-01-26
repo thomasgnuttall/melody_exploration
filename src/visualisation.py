@@ -1,12 +1,12 @@
 import matplotlib.pyplot as plt
 import matplotlib.style as style
-import scipy
+import scipy.signal
 
 style.use('seaborn-dark-palette')
 
 iam_kwargs = {
-    'window': scipy.signal.get_window('hann', int(0.0464*sampleRate)),
-    'NFFT': int(0.0464*sampleRate), # window length x sample rate
+    'window': scipy.signal.get_window('hann', int(0.0464*44100)),
+    'NFFT': int(0.0464*44100), # window length x sample rate
 }
 
 def spectrogram(audio, sampleRate=44100, ylim=None, kwargs=iam_kwargs):

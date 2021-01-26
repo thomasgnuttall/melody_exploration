@@ -34,3 +34,11 @@ def melodia(audio, frameSize, hopSize, sampleRate=44100.0):
     time = np.linspace(0.0, len(audio)/sampleRate, len(pitch))
     
     return time, pitch
+
+
+def crepe(audio):
+    return time, pitch
+
+
+def pitch_extractor(audio):
+    return time, pitch

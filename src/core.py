@@ -1,4 +1,4 @@
-from src.io import audio_loader, pitch_contour_writer
+from src.io import audio_loader, write_pitch_contour
 
 def run_pitch_extraction(conf):
     """
@@ -12,19 +12,20 @@ def run_pitch_extraction(conf):
     path = conf['audio_path']
     print(f'Loading audio from: {path}')
     audio = audio_loader(path, sampleRate=conf['sampleRate'])
-    sample = audio
 
+    # pre process
     for pp_func, pp_kwargs in conf['preprocessing_steps']:
         print(f'Pre-processing step: {pp_func.__name__}')
-        sample = pp_func(sample, **pp_kwargs)
+        audio = pp_func(audio, **pp_kwargs)
 
     extractor = conf['extractor']
     extractor_kwargs = conf['extractor_kwargs']
     
+    # Extract melody
     print(f'Extracting pitch with extractor: {extractor.__name__}')
-    time, pitch = extractor(sample, **extractor_kwargs)
+    time, pitch = extractor(audio, **extractor_kwargs)
 
     out_path = conf['pitch_output_dir']
     if out_path:
         print(f'Writing pitch contour to {out_path}')
-        pitch_contour_writer(pitch, time, out_path)
+        write_pitch_contour(pitch, time, out_path)
