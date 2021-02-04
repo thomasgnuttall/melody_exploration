@@ -143,4 +143,8 @@ cython_debug/
 
 # Folders and files
 data/*
+plots/*
 notes.txt
+*.png
+
+.DS_Store
