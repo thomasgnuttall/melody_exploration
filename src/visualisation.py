@@ -109,7 +109,21 @@ def plot_annotate_save(x, y, matrix_profile, seqs, m, path, y1label='', y2label=
 
 
 def annotate_plot(axs, seqs, m, linewidth=2):
+    """
+    Annotate time series and matrix profile with sequences in <seqs>
 
+    :param axs: list of two subplots, time series and matrix_profile
+    :type axs: [matplotlib.axes._subplots.AxesSubplot, matplotlib.axes._subplots.AxesSubplot]
+    :param seqs: iterable of subsequence start points to annotate
+    :type seqs: numpy.array
+    :param m: Fixed length of subsequences
+    :type m: int
+    :param linewidth: linewidth of shaded area of plot, default 2
+    :type linewidth: float
+    
+    :return: list of two subplots, time series and matrix_profile, annotated
+    :rtype: [matplotlib.axes._subplots.AxesSubplot, matplotlib.axes._subplots.AxesSubplot]
+    """
     x_d = axs[0].lines[0].get_xdata()
     y_d = axs[0].lines[0].get_ydata()
 
