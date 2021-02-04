@@ -1,5 +1,9 @@
-import essentia
-import essentia.standard
+import csv
+import json 
+
+#import essentia
+#import essentia.standard
+import numpy as np
 
 def audio_loader(path, sampleRate=44100):
     """
@@ -20,7 +24,7 @@ def audio_loader(path, sampleRate=44100):
 
 def write_pitch_contour(pitch, time, path):
     """
-    Load audio file from <path> to numpy array
+    Write pitch contour to tsv at <path>
 
     :param time: Array of time values for pitch contour
     :type time: numpy.array
@@ -34,3 +38,39 @@ def write_pitch_contour(pitch, time, path):
         for t, p in zip(time, pitch):
             file.write(f"{t}\t{p}")
             file.write('\n')
+
+
+def load_pitch_contour(path):
+    """
+    load pitch contour from tsv at <path>
+
+    :param path: path to load pitch contour from
+    :type path: str
+
+    :return: Two numpy arrays of time and pitch values
+    :rtype: tuple(numpy.array, numpy.array)
+    """
+    time = []
+    pitch = []
+    with open(path) as fd:
+        rd = csv.reader(fd, delimiter="\t", quotechar='"')
+        for t,p in rd:
+            time.append(t)
+            pitch.append(p)
+    return np.array(time).astype(float), np.array(pitch).astype(float)
+
+
+def load_json(path):
+    """
+    Load json at <path> to dict
+    
+    :param path: path of json
+    :type path: str
+
+    :return: dict of json information
+    :rtype: dict
+    """ 
+    # Opening JSON file 
+    with open(metadata_path) as f: 
+        data = json.load(f) 
+    return data

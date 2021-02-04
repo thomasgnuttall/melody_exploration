@@ -33,22 +33,12 @@ validate_mirdata(carnatic, verbose=False)
 carnatic_data = carnatic.load_tracks()
 track_names = list(carnatic_data.keys())
 
-
 # We have pitch tracks for "Cherthala Ranganatha Sharma at Arkay by Cherthala Ranganatha Sharma"
 tracks_names_with_pitch = [x for x,y in carnatic_data.items() if y.concert[0]['title'] == 'Cherthala Ranganatha Sharma at Arkay']
-ex_track_name = tracks_names_with_pitch[0]
+ex_track_name = tracks_names_with_pitch[4]
 ex_track = carnatic_data[ex_track_name]
 in_path = ex_track.audio_vocal_path
 out_path = '/Desktop/'
-
-
-
-
-
-
-
-
-
 
 
 from src.preprocessing.standard import equal_loudness, source_separation, sample_audio
