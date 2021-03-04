@@ -144,6 +144,8 @@ cython_debug/
 # Folders and files
 data/*
 plots/*
+sounds/*
+dask-worker-space/*
 notes.txt
 *.png
 
