@@ -16,6 +16,16 @@ from src.validation.mirdata import validate_mirdata
 carnatic = mirdata.initialize('saraga_carnatic')
 carnatic.download()
 
+carnatic_data = carnatic.load_tracks()
+with_raga = [x for x in carnatic_data.items() if x[1].raaga]
+raaga_path = [(x[1].raaga[0]['name'], x[1].pitch_vocal_path if x[1].pitch_vocal_path else x[1].audio_path) for x in with_raga]
+
+
+raaga = 'Bhairavi'
+raaga_path = [(x[1].raaga[0]['name'], x[1].pitch_vocal_path if x[1].pitch_vocal_path else x[1].audio_path) for x in carnatic_data.items() if x[1].raaga]
+paths = [x[1] for x in raaga_path if x[0]==raaga]
+
+
 hindustani = mirdata.initialize('saraga_hindustani')
 hindustani.download()
 hindustani_data = hindustani.load_tracks()
