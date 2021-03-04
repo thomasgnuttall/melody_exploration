@@ -1,10 +1,20 @@
+import os
+
 from matplotlib.patches import Rectangle
 import matplotlib.pyplot as plt
 import matplotlib.style as style
 import numpy as np
+import numpy.ma as ma
 import scipy.signal
+import shutil
+
+from src.pitch.transformation import (pitch_seq_to_cents, pitch_to_cents)
+from src.utils import (myround, get_timestamp)
+from src.io import create_if_not_exists
+
 
 style.use('seaborn-dark-palette')
+
 
 iam_kwargs = {
     'window': scipy.signal.get_window('hann', int(0.0464*44100)),
@@ -36,7 +46,7 @@ def spectrogram(audio, sampleRate=44100, ylim=None, kwargs=iam_kwargs):
     return plt
 
 
-def double_timeseries(x, y1, y2, y1label='', y2label='', xlabel='', xfreq=5, yfreq=50, linewidth=1):
+def double_timeseries(x, y1, y2, y1label='', y2label='', xlabel='', xfreq=5, yfreq=50, linewidth=1, ylim1=None, ylim2=None):
     """
     Plot and two time series (with the same x) on the same axis
 
@@ -68,17 +78,21 @@ def double_timeseries(x, y1, y2, y1label='', y2label='', xlabel='', xfreq=5, yfr
     axs[0].set_ylabel(y1label)
     axs[0].set_xticks(np.arange(min(x), max(x)+1, xfreq))
     axs[0].set_yticks(np.arange(min(y1), max(y1)+1, yfreq))
+    if ylim1:
+        axs[0].set_ylim(ylim1)
 
     axs[1].plot(x[:len(y2)], y2, color='green', linewidth=linewidth)
     axs[1].grid()
     axs[1].set_xlabel(xlabel)
     axs[1].set_ylabel(y2label)
     axs[1].set_xticks(np.arange(min(x[:len(y2)]), max(x[:len(y2)])+1, xfreq))
+    if ylim2:
+        axs[1].set_ylim(ylim2)
 
     return fig, axs
 
 
-def plot_annotate_save(x, y, matrix_profile, seqs, m, path, y1label='', y2label='', xlabel='Time'):
+def plot_annotate_save(x, y, matrix_profile, seqs, m, path, y1label='', y2label='', xlabel='Time', sample=False):
     """
     Plot and annotate time series and matrix_profile with 
     subsequences of length <m>, save png to <path>
@@ -101,7 +115,19 @@ def plot_annotate_save(x, y, matrix_profile, seqs, m, path, y1label='', y2label=
     :type y2label: str
     :param xlabel: x label for time series, default 'Time'
     :type xlabel: str
+    :param sample: If True, only show parts of the plot that contain sequences in <seqs>
+    :type sample: bool
     """
+    if sample:
+        min_s = min(seqs) - 2*m # pad plot with 2 sequence lengths
+        max_s = max(seqs) + m + 2*m # pad plot with 2 sequence legnths
+    
+        x = x[min_s:max_s]
+        y = y[min_s:max_s]
+        matrix_profile = matrix_profile[min_s:max_s]
+        
+        seqs = [s-min_s for s in seqs]
+
     fig, axs = double_timeseries(x, y, matrix_profile, y1label, y2label, xlabel)
     axs = annotate_plot(axs, seqs, m, linewidth=2)
     plt.savefig(path)
@@ -140,3 +166,199 @@ def annotate_plot(axs, seqs, m, linewidth=2):
         axs[0].add_patch(rect)
 
     return axs
+
+
+def get_histogram(
+    a, n_bins, xlabel='Pitch (Hz)', 
+    ylabel='Frequency Density', density=True, color='darkblue'):
+    """
+    Plot histogram of <a>
+
+    :param a: array of values
+    :type a: np.array
+    :param n_bins: number of histogram bins
+    :type n_bins: int
+    :param xlabel: x axis label
+    :type xlabel: int
+    :param ylabel: y axis label
+    :type ylabel: int
+    :param density: Whether to plot frequency density or just frequency (True/False)
+    :type density: bool
+    :param color: Color for bars of histogram
+    :type color: str
+
+    :return: tuple of histogram bar objects (magnitudes, locations, plot object)
+    :rtype: (np.array, np.array, matplotlib.container.BarContainer)
+    """
+    plt.xlabel(xlabel)
+    plt.ylabel(ylabel)
+    #plt.grid()
+    return plt.hist(a, n_bins, density=density, color=color)
+
+
+def plot_pitch(
+    pitch, times, s_len=None, mask=None, yticks_dict=None, cents=False, 
+    tonic=None, emphasize=[], figsize=None, title=None, xlabel=None, ylabel=None, 
+    grid=True, ylim=None, xlim=None):
+    """
+    Plot graph of pitch over time
+
+    :param pitch: Array of pitch values in Hz
+    :type pitch: np.array
+    :param times: Array of time values in seconds
+    :type times: np.array
+    :param s_len: If not None, take first <s_len> elements of <pitch> and <time> to plot
+    :type s_len:  int
+    :param mask: Array of bools indicating elements in <pitch> and <time> NOT to be plotted
+    :type mask: np.array
+    :param yticks_dict: Dict of {frequency name: frequency value (Hz)}
+        ...if not None, yticks will be replaced in the relevant places with these names
+    :type yticks_dict: dict(str, float)
+    :param cents: Whether or not to convert frequency to cents above <tonic> 
+    :type cents: bool
+    :param tonic: Tonic to make cent conversion in reference to - only relevant if <cents> is True.
+    :type tonic: float
+    :param emphasize: list of keys in yticks_dict to emphasize on plot (horizontal red line)
+    :type emphasize: list(str)
+    :param figsize: Tuple of figure size values 
+    :type figsize: tuple
+    :param title: Title of figure, default None
+    :type title: str
+    :param xlabel: x axis label, default Time (s)
+    :type xlabel: str
+    :param ylabel: y axis label
+        defaults to 'Cents Above Tonic of <tonic>Hz' if <cents>==True else 'Pitch (Hz)'
+    :type ylabel: str
+    :param grid: Whether to plot grid
+    :type grid: bool
+    :param ylim: Tuple of y limits, defaults to max and min in <pitch>
+    :type ylim: bool
+    :param xlim: Tuple of x limits, defaults to max and min in <time>
+    :type xlim: bool
+
+    :returns: Matplotlib objects for desired plot
+    :rtype: (matplotlib.figure.Figure, matplotlib.axes._subplots.AxesSubplot)
+    """
+    if cents:
+        assert tonic, \
+            "Cannot convert pitch to cents without reference <tonic>"
+        p1 = pitch_seq_to_cents(pitch, tonic)
+    else:
+        p1 = pitch
+
+    if mask is None:
+        # If no masking required, create clear mask
+        mask = np.full((len(pitch),), False)
+    
+    if s_len:
+        assert s_len <= len(pitch), \
+            "Sample length is longer than length of pitch input"
+    else:
+        s_len = len(pitch)
+        
+    if figsize:
+        assert isinstance(figsize, tuple), \
+            "<figsize> should be a tuple of (width, height)"
+        assert len(figsize) == 2, \
+            "<figsize> should be a tuple of (width, height)"
+    else:
+        figsize = (170*s_len/186047, 10.5)
+
+    if not xlabel:
+        xlabel = 'Time (s)'
+    if not ylabel:
+        ylabel = f'Cents Above Tonic of {round(tonic)}Hz' \
+                    if cents else 'Pitch (Hz)'
+
+    pitch_masked = np.ma.masked_where(mask, p1)
+
+    fig = plt.figure(figsize=figsize)
+    ax = plt.gca()
+
+    plt.xlabel(xlabel)
+    plt.ylabel(ylabel)
+
+    if grid:
+        plt.grid()
+
+    if xlim:
+        xmin, xmax = xlim
+    else:
+        xmin = myround(min(times[:s_len]), 5)
+        xmax = max(times[:s_len])
+        
+    if ylim:
+        ymin, ymax = ylim
+    else:
+        ymin_ = min([x for x in pitch_masked.data[:s_len] if x is not None])
+        ymin = myround(ymin_, 50)
+        ymax = max([x for x in pitch_masked.data[:s_len] if x is not None])
+        
+    for s in emphasize:
+        assert yticks_dict, \
+            "Empasize is for highlighting certain ticks in <yticks_dict>"
+        if s in yticks_dict:
+            if cents:
+                p_ = pitch_to_cents(yticks_dict[s], tonic)
+            else:
+                p_ = yticks_dict[s]
+            ax.axhline(p_, color='#db1f1f', linestyle='--', linewidth=1.2)
+
+    times_samp = times[:s_len]
+    pitch_masked_samp = pitch_masked[:s_len]
+
+    plt.plot(times_samp, pitch_masked_samp, linewidth=0.7)
+
+    if yticks_dict:
+        tick_names = list(yticks_dict.keys())
+        tick_loc = [pitch_to_cents(p, tonic) if cents else p \
+                    for p in yticks_dict.values()]
+        ax.set_yticks(tick_loc)
+        ax.set_yticklabels(tick_names)
+    
+    ax.set_xticks(np.arange(xmin, xmax+1, 1))
+
+    plt.xticks(fontsize=8.5)
+    ax.set_facecolor('#f2f2f2')
+
+    ax.set_ylim((ymin, ymax))
+    ax.set_xlim((xmin, xmax))
+
+    if title:
+        plt.title(title)
+
+    return fig, ax
+
+
+def plot_subsequence(sp, pattern_length, pitch, times, mask, path, plot_kwargs={}):
+    this_pitch = pitch[sp:sp+int(pattern_length/0.0029)]
+    this_times = times[sp:sp+int(pattern_length/0.0029)]
+    this_mask = mask[sp:sp+int(pattern_length/0.0029)]
+    fig, ax = plot_pitch(
+        this_pitch, this_times, mask=this_mask,
+        xlim=(min(this_times), max(this_times)), **plot_kwargs)
+    plt.savefig(path, dpi=90)
+    plt.close('all')
+    plt.cla()
+
+
+def plot_all_sequences(rec, m_secs, seq_list, direc, clear_dir=False, plot_kwargs={}):
+    if clear_dir:
+        try:
+            shutil.rmtree(direc)
+        except:
+            pass
+    for i, seqs in enumerate(seq_list):
+        for s in seqs:
+            t_sec = s*0.0029
+            str_pos = get_timestamp(t_sec)
+            sp = int(s)
+            pattern_length = m_secs
+            path = os.path.join(direc, f'motif_{i}/time={str_pos}.png')
+            create_if_not_exists(path)
+            plot_subsequence(
+                sp, m_secs, rec.pitch, rec.times, 
+                rec.silence_mask, path, plot_kwargs
+            )
+
+
