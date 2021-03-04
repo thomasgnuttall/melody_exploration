@@ -7,7 +7,7 @@ from src.utils import find_nearest
 
 def get_chains(mp_left, mp_right, mask=[], m=None, min_length=2, sort=True, sort_key=lambda y: -len(y)):
     """
-    Get iterable of all chains identified in by matrix profile. 
+    Get iterable of all chains identified by matrix profile. 
 
     :param mp_left: left indices from matrix profile index
     :type mp_left: numpy.array
@@ -90,4 +90,40 @@ def get_longest(all_chains_clustered):
         this_cluster = all_chains_clustered[np.where(all_chains_clustered[:,1]==c)]
         this_clust_sort = sorted(this_cluster, key=lambda y: -len(y))
         cluster_candidates[c] = this_clust_sort[0][0]
+    return cluster_candidates
+
+
+def get_clustered_chains(chains, feature_func, cluster_func, candidate_func, feature_func_kwargs={}, cluster_func_kwargs={}, candidate_func_kwargs={}):
+    """
+    Cluster a list of sequence chains using specified functions
+
+    :param chains: array of chains, where chain is array of subsequence start points
+    :type chains: numpy.array
+    :param feature_func: Fucntion that takes as its first argument chains and returns an array of equal lenght of features for <cluster_func>
+    :type feature_func: python function
+    :param cluster_func: Takes output array of feature_func and clusters, returning array of cluster allocations
+    :type cluster_func: python function
+    :param candidate_func: Takes array of (chain, cluster allocation) and returns a dict of {cluster:chain} where chain is selected by <candidate_func>
+    :type candidate_func: python function
+    :param cluster_kwargs: dict of arguments for <cluster>
+    :type cluster_kwargs: dict
+    :param feature_func_kwargs: dict of arguments for <feature_func>
+    :type feature_func_kwargs: dict
+    :param candidate_func_kwargs: dict of arguments for <candidate_func>
+    :type candidate_func_kwargs: dict
+    
+
+    :return: {cluster:chain}
+    :rtype: dict
+    """
+    # AVERAGE BEST MATCHES
+    matches_av = feature_func(chains, **feature_func_kwargs)
+
+    # Cluster chains
+    cluster_indices = cluster_func(matches_av, **cluster_func_kwargs)
+    all_chains_clustered = np.array(list(zip(chains, cluster_indices)), dtype=object)
+
+    # pick candidate
+    cluster_candidates = candidate_func(all_chains_clustered, **candidate_func_kwargs)
+
     return cluster_candidates
