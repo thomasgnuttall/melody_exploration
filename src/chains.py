@@ -3,8 +3,27 @@ from scipy.signal import argrelextrema
 from sklearn.neighbors import KernelDensity
 import stumpy 
 
-from src.utils import find_nearest
+#from src.utils import find_nearest
 
+def find_nearest(array, value, index=True):
+    """
+    Find the closest element of <array> to <value>
+
+    :param array: array of values
+    :type array: numpy.array
+    :param value: value to check
+    :type value: float
+    :param index: True or False, return index or value in <array> of closest element?
+    :type index: bool
+
+    :return: index/value of element in <array> closest to <value>
+    :rtype: number
+    """
+    array = np.asarray(array)
+    idx = (np.abs(array - value)).argmin()
+    return idx if index else array[idx]
+
+    
 def get_chains(mp_left, mp_right, mask=[], m=None, min_length=2, sort=True, sort_key=lambda y: -len(y)):
     """
     Get iterable of all chains identified by matrix profile. 

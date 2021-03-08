@@ -145,6 +145,7 @@ cython_debug/
 data/*
 plots/*
 sounds/*
+output/*
 dask-worker-space/*
 notes.txt
 *.png

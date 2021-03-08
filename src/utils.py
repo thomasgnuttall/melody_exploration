@@ -5,6 +5,7 @@ import operator
 
 from kneed import KneeLocator
 import numpy as np
+import pandas as pd
 from scipy.signal import find_peaks
 import scipy.ndimage.filters as filters
 import scipy.ndimage.morphology as morphology
@@ -216,19 +217,32 @@ def get_non_silence(pitch, m_secs):
     return np.array([0 if 0 in pitch[i:i+int(m_secs/0.0029)] else 1 for i in range(len(pitch))])
 
 
-def get_minima(rec, mp, m_secs, sig_percentile):
+def get_minima(rec, mp, m_secs, sig_percentile, bandwidth, remove_silent=True):
     minima = detect_local_minima(mp[:, 0])
 
     # filter out patterns that include silence
     non_silence = get_non_silence(rec.pitch, m_secs)
-    ns_i = np.array([i for i,x in enumerate(minima[0]) if non_silence[x]])
-    minima = [minima[0][ns_i], minima[1][ns_i]]
+    if remove_silent:
+        ns_i = np.array([i for i,x in enumerate(minima[0]) if non_silence[x]])
+        if ns_i.size == 0:
+            return []
+        minima = [minima[0][ns_i], minima[1][ns_i]]
 
     # threshold
     th_i = [i for i,x in enumerate(minima[1]) if x <= np.percentile(minima[1], sig_percentile)]
     minima = minima[0][th_i]
     
-    return minima
+    # cluster nearby
+    clustered = [x for x in kde_cluster_1d(minima, bandwidth=bandwidth)]
+    minima_labelled = zip(clustered, minima)
+
+    # Take most similar candidate from each cluster
+    it = itertools.groupby(minima_labelled, operator.itemgetter(0))
+    cluster_ss = []
+    for k, si in it:
+        cluster_ss.append(min([s[1] for s in si]))
+
+    return cluster_ss
 
 
 def search_and_cluster(minima, rec, m_secs, N=None):
@@ -248,7 +262,7 @@ def get_subsequence_cluster(ss, rec, m_secs, N=None):
     every other subsequence in <rec>.pitch. Return top <N> unique subsequences. If N is not 
     specified, determine cutoff using Knee method (https://raghavan.usc.edu//papers/kneedle-simplex11.pdf)
     """
-    stmass = stumpy.core.mass(rec.pitch[ss:ss+int(m_secs/0.0029)], rec.pitch)
+    stmass = stumpy.core.mass(rec.pitch[ss:ss+int(m_secs/0.0029)], rec.pitch, normalize=False)
     
     # Take 50000 most similar
     mass_index = np.array(sorted(enumerate(stmass), key=lambda y: y[1]))[:50000]
@@ -257,7 +271,7 @@ def get_subsequence_cluster(ss, rec, m_secs, N=None):
     mass_index = np.array(sorted(mass_index, key=lambda y: y[0]))
     
     # Cluster subsequences start points that are part odf the same motif using KDE
-    labels = np.array([x[0] for x in kde_cluster_1d(mass_index[:,0], bandwidth=10)])
+    labels = np.array([x for x in kde_cluster_1d(mass_index[:,0], bandwidth=m_secs/(6*0.0029))])
     labelled = np.dstack([mass_index[:,0], mass_index[:,1], labels])[0]
     
     # Take most similar candidate from each cluster
@@ -275,6 +289,7 @@ def get_subsequence_cluster(ss, rec, m_secs, N=None):
     if not N:
         kn = KneeLocator(x, y, curve='concave', direction='increasing')
         N = kn.knee
+
     return [x[0] for x in ranked][:N]
 
 
@@ -293,3 +308,33 @@ def get_timestamp(secs, divider='-'):
     minutes = int(secs/60)
     seconds = round(secs%60, 2)
     return f'{minutes}min{divider}{seconds}sec'
+
+
+def interpolate_below_length(arr, val, gap):
+    """
+    Interpolate gaps of value, <val> of 
+    length equal to or shorter than <gap> in <arr>
+    
+    :param arr: Array to interpolate
+    :type arr: np.array
+    :param val: Value expected in gaps to interpolate
+    :type val: number
+    :param gap: Maximum gap length to interpolate, gaps of <val> longer than <g> will not be interpolated
+    :type gap: int
+
+    :return: interpolated array
+    :rtype: np.array
+    """
+    s = np.copy(arr)
+    is_zero = s == val
+    cumsum = np.cumsum(is_zero).astype('float')
+    diff = np.zeros_like(s)
+    diff[~is_zero] = np.diff(cumsum[~is_zero], prepend=0)
+    for i,d in enumerate(diff):
+        if d <= gap:
+            s[int(i-d):i] = np.nan
+    interp = pd.Series(s).interpolate(method='linear', axis=0)\
+                         .ffill()\
+                         .bfill()\
+                         .values
+    return interp

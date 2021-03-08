@@ -290,9 +290,14 @@ def plot_pitch(
     if ylim:
         ymin, ymax = ylim
     else:
-        ymin_ = min([x for x in pitch_masked.data[:s_len] if x is not None])
-        ymin = myround(ymin_, 50)
-        ymax = max([x for x in pitch_masked.data[:s_len] if x is not None])
+        sample = pitch_masked.data[:s_len]
+        if not set(sample) == {None}:
+            ymin_ = min([x for x in sample if x is not None])
+            ymin = myround(ymin_, 50)
+            ymax = max([x for x in sample if x is not None])
+        else:
+            ymin=0
+            ymax=1000
         
     for s in emphasize:
         assert yticks_dict, \

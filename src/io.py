@@ -6,6 +6,10 @@ import yaml
 #import essentia
 #import essentia.standard
 import numpy as np
+import librosa
+import soundfile as sf
+
+from src.utils import get_timestamp
 
 def audio_loader(path, sampleRate=44100):
     """
@@ -124,10 +128,6 @@ def load_matrix_profile(path):
         for mp, mpi, li, ri in rd:
             arr.append(np.array([float(mp), int(mpi), int(li), int(ri)]))
     arr = np.array(arr, dtype=object)
-    arr[:,0] = arr[:,0].astype(float)
-    arr[:,1] = arr[:,1].astype(int)
-    arr[:,2] = arr[:,2].astype(int)
-    arr[:,3] = arr[:,3].astype(int)
     return arr
 
 
@@ -154,3 +154,22 @@ def create_if_not_exists(path):
     # Do not try and create directory if path is just a filename
     if (not os.path.exists(directory)) and (directory != ''):
         os.makedirs(directory)
+
+
+def write_subsequences_group(y, sr, starts, m_secs, output_dir):
+    create_if_not_exists(output_dir)
+    for s in starts:
+        sec_start = s*0.0029        
+        timestamp = get_timestamp(sec_start)
+        out_path = os.path.join(output_dir, f'time={timestamp}.wav')
+        l = m_secs*sr
+        s1 = sec_start*sr
+        s2 = s1+l
+        subseq = y[int(s1):int(s2)]
+        sf.write(out_path, subseq, samplerate=sr)
+
+def write_all_sequence_audio(audio_path, all_seqs, m_secs, output_dir):
+    y, sr = librosa.load(audio_path)
+    for i, seq in enumerate(all_seqs):
+        out_dir = os.path.join(output_dir, f'motif_{i}/')
+        write_subsequences_group(y, sr, seq, m_secs, out_dir)

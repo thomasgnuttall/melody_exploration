@@ -15,7 +15,7 @@ from src.io import (
 from src.pitch.transformation import (
     octavize_pitch, locate_pitch_peaks, pitch_dict_octave_extend, 
     pitch_seq_to_cents, pitch_to_cents, cents_to_pitch)
-from src.utils import get_logger, get_keyword_path
+from src.utils import get_logger, get_keyword_path, interpolate_below_length
 
 logger = get_logger(__name__)
 
@@ -31,7 +31,7 @@ SVARA_CENT = rel_path('../../conf/svara_cents.yaml')
 
 class Recording:
     """Recording Class"""
-    def __init__(self, rec_dir, svara_lookup_path=SVARA_LOOKUP, svara_cent_path=SVARA_CENT):
+    def __init__(self, rec_dir, gap_interp=0.06, svara_lookup_path=SVARA_LOOKUP, svara_cent_path=SVARA_CENT):
 
         # Args
         self.rec_dir = rec_dir
@@ -44,10 +44,18 @@ class Recording:
         self.__unpack_json(self.metadata)
 
         # Paths
-        pitch_vocal_path = get_keyword_path(self.rec_dir, 'pitch-vocal.txt')[0]
-        pitch_mix_path = get_keyword_path(self.rec_dir, 'pitch.txt')[0]
-        audio_path = get_keyword_path(self.rec_dir, '.mp3')[0]
-        tonic_path = get_keyword_path(self.rec_dir, 'tonic')[0]
+        pitch_vocal_path = get_keyword_path(self.rec_dir, 'pitch-vocal.txt')
+        pitch_vocal_path = pitch_vocal_path[0] if pitch_vocal_path else None
+
+        pitch_mix_path = get_keyword_path(self.rec_dir, 'pitch.txt')
+        pitch_mix_path = pitch_mix_path[0] if pitch_mix_path else None
+
+        audio_path = get_keyword_path(self.rec_dir, '.mp3')
+        audio_path = audio_path[0] if audio_path else None
+
+        tonic_path = get_keyword_path(self.rec_dir, 'tonic')
+        tonic_path = tonic_path[0] if tonic_path else None
+
 
         self.pitch_vocal_path = pitch_vocal_path if pitch_vocal_path else None
         self.pitch_mix_path = pitch_mix_path if pitch_mix_path else None
@@ -74,6 +82,8 @@ class Recording:
         else:
             logger.warning('No pitch tracks found')
         
+        # Interpolate gaps of length equal to or less than 60ms
+        self.pitch = interpolate_below_length(self.pitch, 0, int(gap_interp*0.001/0.0029))
         self.silence_mask = self.pitch == 0
 
         # In cents
@@ -124,7 +134,7 @@ class Recording:
             setattr(self, mp_name, mp_ex)
             return mp_ex
 
-        mp = stumpy.stump(self.pitch, m=m)
+        mp = stumpy.stump(self.pitch, m=m, normalize=False)
 
         setattr(self, mp_name, mp)
 
