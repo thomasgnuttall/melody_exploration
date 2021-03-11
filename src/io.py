@@ -82,6 +82,22 @@ def load_json(path):
     return data
 
 
+def write_json(j, path):
+    """
+    Write json, <j>, to <path>
+
+    :param j: json
+    :type path: json
+    :param path: path to write to, 
+        if the directory doesn't exist, one will be created
+    :type path: str
+    """ 
+    create_if_not_exists(path)
+    # Opening JSON file 
+    with open(path, 'w') as f:
+        json.dump(j, f)
+
+
 def load_yaml(path):
     """
     Load yaml at <path> to dictionary, d
@@ -158,10 +174,10 @@ def create_if_not_exists(path):
 
 def write_subsequences_group(y, sr, starts, m_secs, output_dir):
     create_if_not_exists(output_dir)
-    for s in starts:
+    for i, s in enumerate(starts):
         sec_start = s*0.0029        
         timestamp = get_timestamp(sec_start)
-        out_path = os.path.join(output_dir, f'time={timestamp}.wav')
+        out_path = os.path.join(output_dir, f'{i}_time={timestamp}.wav')
         l = m_secs*sr
         s1 = sec_start*sr
         s2 = s1+l

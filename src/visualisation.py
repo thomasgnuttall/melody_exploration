@@ -10,7 +10,7 @@ import shutil
 
 from src.pitch.transformation import (pitch_seq_to_cents, pitch_to_cents)
 from src.utils import (myround, get_timestamp)
-from src.io import create_if_not_exists
+from src.io import create_if_not_exists, write_json
 
 
 style.use('seaborn-dark-palette')
@@ -347,23 +347,28 @@ def plot_subsequence(sp, pattern_length, pitch, times, mask, path, plot_kwargs={
     plt.cla()
 
 
-def plot_all_sequences(rec, m_secs, seq_list, direc, clear_dir=False, plot_kwargs={}):
+def plot_all_sequences(rec, m_secs, seq_list, direc, importances=None, clear_dir=False, plot_kwargs={}):
     if clear_dir:
         try:
             shutil.rmtree(direc)
         except:
             pass
     for i, seqs in enumerate(seq_list):
-        for s in seqs:
+        for si,s in enumerate(seqs):
             t_sec = s*0.0029
             str_pos = get_timestamp(t_sec)
             sp = int(s)
             pattern_length = m_secs
-            path = os.path.join(direc, f'motif_{i}/time={str_pos}.png')
-            create_if_not_exists(path)
+            plot_path = os.path.join(direc, f'motif_{i}/{si}_time={str_pos}.png')
+            create_if_not_exists(plot_path)
             plot_subsequence(
                 sp, m_secs, rec.pitch, rec.times, 
-                rec.silence_mask, path, plot_kwargs
+                rec.silence_mask, plot_path, plot_kwargs
             )
+    if importances:
+        imps = {i:dict(enumerate(imp)) for i,imp in enumerate(importances)}
+        imp_path = os.path.join(direc, f'importances.json')
+        create_if_not_exists(imp_path)
+        write_json(imps, imp_path)
 
 

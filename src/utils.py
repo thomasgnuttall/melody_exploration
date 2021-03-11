@@ -250,10 +250,12 @@ def search_and_cluster(minima, rec, m_secs, N=None):
     For list of subsequence start points, <minima> apply get_subsequence_cluster()
     """
     out_seq = []
+    out_sig = []
     for m in minima:
-        these = get_subsequence_cluster(ss=m, rec=rec, m_secs=m_secs, N=N)
-        out_seq.append(these)
-    return out_seq
+        pats, sigs = get_subsequence_cluster(ss=m, rec=rec, m_secs=m_secs, N=N)
+        out_seq.append(pats)
+        out_sig.append(sigs)
+    return out_seq, out_sig
 
 
 def get_subsequence_cluster(ss, rec, m_secs, N=None):
@@ -289,8 +291,11 @@ def get_subsequence_cluster(ss, rec, m_secs, N=None):
     if not N:
         kn = KneeLocator(x, y, curve='concave', direction='increasing')
         N = kn.knee
+    
+    pats = [x[0] for x in ranked][:N]
+    sigs = [x[1] for x in ranked][:N]
 
-    return [x[0] for x in ranked][:N]
+    return pats, sigs
 
 
 def get_timestamp(secs, divider='-'):
@@ -320,7 +325,7 @@ def interpolate_below_length(arr, val, gap):
     :param val: Value expected in gaps to interpolate
     :type val: number
     :param gap: Maximum gap length to interpolate, gaps of <val> longer than <g> will not be interpolated
-    :type gap: int
+    :type gap: number
 
     :return: interpolated array
     :rtype: np.array

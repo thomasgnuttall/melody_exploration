@@ -83,7 +83,7 @@ class Recording:
             logger.warning('No pitch tracks found')
         
         # Interpolate gaps of length equal to or less than 60ms
-        self.pitch = interpolate_below_length(self.pitch, 0, int(gap_interp*0.001/0.0029))
+        self.pitch = interpolate_below_length(self.pitch, 0, int(gap_interp/0.0029))
         self.silence_mask = self.pitch == 0
 
         # In cents
