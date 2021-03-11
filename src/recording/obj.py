@@ -5,6 +5,7 @@ import shutil
 
 import numpy as np
 from scipy.sparse import csr_matrix
+from scipy.ndimage import gaussian_filter1d
 import stumpy
 from sklearn.cluster import DBSCAN
 import tqdm
@@ -90,7 +91,7 @@ class Recording:
         self.pitch_cents = pitch_seq_to_cents(self.pitch, self.tonic)
         
 
-    def self_matrix_profile(self, m, seconds=True, res=0.0029, cache=False, cache_dir=None):
+    def self_matrix_profile(self, m, seconds=True, smooth=None, res=0.0029, cache=False, cache_dir=None):
         """
         Compute the self matrix profile of self.pitch
         with subsequence of length=<m>.
@@ -100,6 +101,8 @@ class Recording:
         :param seconds: If True, m is specified in seconds and 
             converted to number of elements of length <res> seconds
         :type seconds: bool
+        :param smooth: If not None, sigma for gaussian smoothing
+        :type smooth: float
         :param res: Only relevant if <seconds> - length of each timestep in sequence
         :type res: float
         :param cache: If True, store a local cache of this matrix profile in <cache_dir>
@@ -117,7 +120,7 @@ class Recording:
             # Pattern length in seconds
             m = int(m/res)
 
-        mp_name = f'__mp_self_m{str(m)}_seconds{str(seconds)}'
+        mp_name = f'__mp_self_m{str(m)}_seconds{str(seconds)}_gap_interp{str(self.gap_interp)}_smooth{str(smooth)}'
         this_mp = self.__getattr__(mp_name)
 
         if not this_mp is None:
@@ -134,7 +137,12 @@ class Recording:
             setattr(self, mp_name, mp_ex)
             return mp_ex
 
-        mp = stumpy.stump(self.pitch, m=m, normalize=False)
+        if smooth:
+            pitch_smoothed = gaussian_filter1d(self.pitch, smooth)
+            self.pitch_smoothed = pitch_smoothed
+            mp = stumpy.stump(pitch_smoothed, m=m, normalize=False)
+        else:
+            mp = stumpy.stump(self.pitch, m=m, normalize=False)
 
         setattr(self, mp_name, mp)
 

@@ -3,6 +3,7 @@ chart-studio==1.1.0
 dask==2021.1.1
 dash==1.19.0
 distributed==2021.1.1
+Flask-Caching==1.10.0
 kneed==0.7.0
 matplotlib==3.3.3
 mirdata==0.3.0

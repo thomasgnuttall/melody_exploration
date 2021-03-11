@@ -307,7 +307,7 @@ def plot_pitch(
                 p_ = pitch_to_cents(yticks_dict[s], tonic)
             else:
                 p_ = yticks_dict[s]
-            ax.axhline(p_, color='#db1f1f', linestyle='--', linewidth=1.2)
+            ax.axhline(p_, color='#db1f1f', linestyle='--', linewidth=1)
 
     times_samp = times[:s_len]
     pitch_masked_samp = pitch_masked[:s_len]
@@ -336,12 +336,29 @@ def plot_pitch(
 
 
 def plot_subsequence(sp, pattern_length, pitch, times, mask, path, plot_kwargs={}):
-    this_pitch = pitch[sp:sp+int(pattern_length/0.0029)]
-    this_times = times[sp:sp+int(pattern_length/0.0029)]
-    this_mask = mask[sp:sp+int(pattern_length/0.0029)]
+    time_eps = int(pattern_length/0.0029)
+    this_pitch = pitch[sp-time_eps:sp+2*time_eps]
+    this_times = times[sp-time_eps:sp+2*time_eps]
+    this_mask = mask[sp-time_eps:sp+2*time_eps]
     fig, ax = plot_pitch(
         this_pitch, this_times, mask=this_mask,
         xlim=(min(this_times), max(this_times)), **plot_kwargs)
+    
+    x_d = ax.lines[1].get_xdata()
+    y_d = ax.lines[1].get_ydata()
+
+    x = x_d[time_eps:2*time_eps]
+    y = y_d[time_eps:2*time_eps]
+    
+    max_y = ax.get_ylim()[1]
+    min_y = ax.get_ylim()[0]
+
+    rect = Rectangle((times[sp], min_y), pattern_length, max_y-min_y, facecolor='lightgrey')
+    ax.add_patch(rect)
+
+    ax.plot(x, y, linewidth=0.7, color='darkorange')
+    ax.axvline(x=x_d[time_eps], linestyle="dashed", color='black', linewidth=0.8)
+
     plt.savefig(path, dpi=90)
     plt.close('all')
     plt.cla()

@@ -9,6 +9,7 @@ import dash_html_components as html
 import plotly.graph_objs as go
 
 import flask
+from flask_caching import Cache
 import glob
 import os
 
@@ -46,7 +47,7 @@ def main(output_dir):
     motif_dict, every_fn = get_motif_dict(output_dir)
     plot_name_path = {}
     component_options = sorted(motif_dict.keys(), key=lambda y: int(y.split('_')[1]))
-    static_image_route = '/static/'
+    static_image_route = '/static_/'
 
     try:
         metadata = load_json(os.path.join(output_dir, 'metadata.json'))
@@ -64,6 +65,11 @@ def main(output_dir):
     # Initialize App
     ################
     app = dash.Dash(external_stylesheets=['https://codepen.io/chriddyp/pen/bWLwgP.css'])
+    cache = Cache(app.server, config={
+        'CACHE_TYPE': 'simple'
+    })
+
+    cache.clear()
     app.title = 'Melodic Exploration - Results Browser'
     graph_layout = go.Layout(
         title="Euclidean Distance to Parent Pattern, Example 1",
